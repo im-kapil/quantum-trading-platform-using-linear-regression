@@ -7,11 +7,12 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from helpers.utility_helper import get_previous_date
 import joblib
-
+from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler
-# from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression
 from sklearn.pipeline import Pipeline
 import xgboost as xgb
+import numpy as np
 
 df = yf.download("^NSEI", start="1970-01-01", end=date.today())
 
@@ -37,7 +38,8 @@ print(df.head(50))
 print(df.tail(50))
 
 features = [
-    'Close', 'High', 'Low', 'Open', 'Volume', 'sma_close_10',
+    'Close', 'High', 'Low', 'Open', 'Volume', 
+    'sma_close_10',
     'rsi_close_10', 'mom_close_10', 'bbands_close_10_m_pct',
     'bbands_close_10_u_pct', 'bbands_close_10_l_pct',
     'bbands_close_10_width_pct', 'macd_close_pct', 'macd_signal_close_pct',
@@ -57,25 +59,13 @@ X_test  = X[X.index >= split_date]
 y_train = y[y.index < split_date]
 y_test  = y[y.index >= split_date]
 
-# param_grid = {
-#     "n_estimators": [100, 200, 300],
-#     "learning_rate": [0.01, 0.05, 0.1],
-#     "max_depth": [3, 5, 7],
-#     "subsample": [0.8, 1.0],
-# }
-
-# grid = GridSearchCV(
-#     xgb.XGBRegressor(random_state=42),
-#     param_grid,
-#     scoring="neg_mean_squared_error",
-#     cv=5,
-#     verbose=1
-# )
 
 model = xgb.XGBRegressor(
-    n_estimators=100,
-    learning_rate=0.5,
-    max_depth=2,
+    n_estimators=500,
+    learning_rate=0.05,   # smaller learning rate
+    max_depth=3,           # shallow trees
+    subsample=0.8,         # optional: adds regularization
+    colsample_bytree=0.8,
     random_state=42
 )
 
@@ -84,8 +74,25 @@ pipeline = Pipeline([
     ("model", model)
 ], memory=None)
 
+# pipeline = Pipeline([
+#     ("scaler", StandardScaler()),
+#     ("model", LinearRegression())
+# ])
+
+
 print('🚀 Model Training begins... 🔂 ')
 pipeline.fit(X_train, y_train)
 print('🚀 Model is trained 🙂  ')
 
 joblib.dump(pipeline, "../models/NiFTY_next_open_prediction.pkl")
+
+y_pred = pipeline.predict(X_test)
+
+mse = mean_squared_error(y_test, y_pred)
+r2 = r2_score(y_test, y_pred)
+
+print("MSE:", mse)
+print("R2 Score:", r2)
+
+direction_accuracy = np.mean(np.sign(y_pred - X_test['Close']) == np.sign(y_test - X_test['Close']))
+print("Direction Accuracy:", direction_accuracy)
