@@ -63,3 +63,8 @@ Because this is a serious trading application, we should start with strong, inte
 | **Hybrid**                               | Combine technical indicators with LSTM | Best of both worlds                           | Requires careful tuning               |
 
 **PO Decision: Start with XGBoost/LightGBM for initial benchmark, then move to LSTM or Temporal Fusion Transformer for capturing sequential patterns.**
+
+** CUrrent MSE, R2 and Direction accuracy from Model 😱" 
+MSE: 24373132.113994256
+R2 Score: -2.5882537565663153
+Direction Accuracy: 0.47218453188602444
